@@ -1,0 +1,37 @@
+=6=
+No JSON object could be decoded
+Traceback (most recent call last):
+  File "/Users/lizhiyuan/Downloads/jsonDiff/RunMe.py", line 156, in query_diff
+    self.analyze_reference)
+  File "/Users/lizhiyuan/Downloads/jsonDiff/JsonUtils.py", line 115, in json_assert
+    json_exp = json.loads(expect_json, encoding=DEFAULT_ENCODING)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/__init__.py", line 351, in loads
+    return cls(encoding=encoding, **kw).decode(s)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/decoder.py", line 366, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/decoder.py", line 384, in raw_decode
+    raise ValueError("No JSON object could be decoded")
+ValueError: No JSON object could be decoded
+=7=
+No JSON object could be decoded
+Traceback (most recent call last):
+  File "/Users/lizhiyuan/Downloads/jsonDiff/RunMe.py", line 156, in query_diff
+    self.analyze_reference)
+  File "/Users/lizhiyuan/Downloads/jsonDiff/JsonUtils.py", line 115, in json_assert
+    json_exp = json.loads(expect_json, encoding=DEFAULT_ENCODING)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/__init__.py", line 351, in loads
+    return cls(encoding=encoding, **kw).decode(s)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/decoder.py", line 366, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/decoder.py", line 384, in raw_decode
+    raise ValueError("No JSON object could be decoded")
+ValueError: No JSON object could be decoded
+an/Downloads/jsonDiff/RunMe.py", line 156, in query_diff
+    self.analyze_reference)
+  File "/Users/lizhiyuan/Downloads/jsonDiff/JsonUtils.py", line 115, in json_assert
+    json_exp = json.loads(expect_json, encoding=DEFAULT_ENCODING)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/__init__.py", line 351, in loads
+    return cls(encoding=encoding, **kw).decode(s)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/json/decoder.py", line 369, in decode
+    raise ValueError(errmsg("Extra data", s, end, len(s)))
+ValueError: Extra data: line 1 column 2 - line 143 column 4 (char 1 - 9239)
