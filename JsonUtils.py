@@ -149,10 +149,18 @@ def json_assert(expect_json, actual_json, absolute_ignore, relactive_ignore, val
             continue
         # 因为有删除操作,所以,使用dict.keys()来遍历
         for exp_key in result_exp.keys():
-            if re.search(ign_value, str(result_exp[exp_key])):
+            if not isinstance(result_exp[exp_key], unicode):
+                value_exp = unicode(str(result_exp[exp_key]), DEFAULT_ENCODING)
+            else:
+                value_exp = result_exp[exp_key]
+            if re.search(ign_value, value_exp):
                 del result_exp[exp_key]
         for act_key in result_act.keys():
-            if re.search(ign_value, str(result_act[act_key])):
+            if not isinstance(result_act[act_key], unicode):
+                value_act = unicode(str(result_act[act_key]), DEFAULT_ENCODING)
+            else:
+                value_act = result_act[act_key]
+            if re.search(ign_value, value_act):
                 del result_act[act_key]
 
     # 递归地处理引用形式：xxx.xxx.$ref=$.xxx.xxx.xx[x].xxx
