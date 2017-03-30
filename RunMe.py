@@ -88,12 +88,12 @@ class JsonDiffTool:
                 os.remove(self.data_path + sonfile)
 
         try:
+            is_break = False
             while True:
 
                 # 判断发送请求个数是否到达指定个数
-                if not self.max_count_to_process == -1:
-                    if self.total_line_num >= self.max_count_to_process:
-                        break
+                if is_break:
+                    break
 
                 # 每次读取一批数据做处理
                 lines = request_file_obj.readlines(self.BUFFER_SIZE)
@@ -101,6 +101,11 @@ class JsonDiffTool:
                     break
 
                 for line in lines:
+                    # 判断发送请求个数是否到达指定个数
+                    if not self.max_count_to_process == -1:
+                        if self.total_line_num >= self.max_count_to_process:
+                            is_break = True
+                            break
                     self.total_line_num += 1
                     begin = datetime.datetime.now()
 
@@ -219,12 +224,12 @@ class JsonDiffTool:
                 os.remove(self.data_path + sonfile)
 
         try:
+            is_break = False
             while True:
 
                 # 判断发送请求个数是否到达指定个数
-                if not self.max_count_to_process == -1:
-                    if self.total_line_num >= self.max_count_to_process:
-                        break
+                if is_break:
+                    break
 
                 # 每次读取一批数据做处理
                 lines1 = json_data_file_1_obj.readlines(self.BUFFER_SIZE)
@@ -235,6 +240,11 @@ class JsonDiffTool:
                 total = len(lines2) if len(lines1) > len(lines2) else len(lines1)
 
                 for i in range(total):
+                    # 判断发送请求个数是否到达指定个数
+                    if not self.max_count_to_process == -1:
+                        if self.total_line_num >= self.max_count_to_process:
+                            is_break = True
+                            break
                     self.total_line_num += 1
                     begin = datetime.datetime.now()
 
