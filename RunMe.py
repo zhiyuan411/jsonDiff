@@ -36,6 +36,8 @@ class JsonDiffTool:
         self.is_disorder_array = (self.conf.get('Global', 'IS_DISORDER_ARRAY').lower() == "true")
         self.is_full_compare = (self.conf.get('Global', 'IS_FULL_COMPARE').lower() != "false")
         self.analyze_reference = (self.conf.get('Global', 'ANALYZE_REFERENCE').lower() == "true")
+        self.display_filter_words = self.conf.get('Global', 'DISPLAY_FILTER_WORDS').replace(' ', '').split(';')
+        self.display_ignore_words = self.conf.get('Global', 'DISPLAY_IGNORE_WORDS').replace(' ', '').split(';')
         self.diff_results_file = self.data_path + self.conf.get('Global', 'DIFF_RESULTS_FILE')
         self.exception_results_file = self.data_path + self.conf.get('Global', 'EXCEPTION_RESULTS_FILE')
 
@@ -178,7 +180,8 @@ class JsonDiffTool:
                     if diff_result:
                         # 获取html格式的差异结果
                         self.__log_print("DIFF")
-                        html_diff_result = generate_html(left_json, right_json, left_url, right_url)
+                        html_diff_result = generate_html(left_json, right_json, left_url, right_url,
+                                                         self.display_filter_words, self.display_ignore_words)
                         out_file = '%s%s%s%s%s' % (
                             self.data_path, 'lineNum_', str(self.total_line_num), '_diffResult', '.html')
                         out_file_obj = open(out_file, 'w')
@@ -298,7 +301,8 @@ class JsonDiffTool:
                         json_data_name_2 = self.json_data_file_2[json_data_index + 1:]
                         self.__log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, json_data_name_1,
-                                                         json_data_name_2)
+                                                         json_data_name_2, self.display_filter_words,
+                                                         self.display_ignore_words)
                         out_file = '%s%s%s%s%s' % (
                             self.data_path, 'lineNum_', str(self.total_line_num), '_diffResult', '.html')
                         out_file_obj = open(out_file, 'w')

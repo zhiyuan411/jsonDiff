@@ -315,8 +315,7 @@ def __disorder_array_assert(key_prefix, exp_key, exp_value, result_act):
             i += 1
 
 
-def generate_html(json_left, json_right, left_url, right_url):
-
+def generate_html(json_left, json_right, left_url, right_url, display_filter_words, display_ignore_words):
     # 对JSONP做兼容
     json_left = json_left.strip()
     json_right = json_right.strip()
@@ -337,8 +336,63 @@ def generate_html(json_left, json_right, left_url, right_url):
     json_right = json.dumps(json.loads(json_right), indent=4).decode('raw_unicode_escape')
     json_right_list = json_right.splitlines()
 
-    res_tmp = HtmlDiff().make_file(json_left_list,
-                                   json_right_list,
+    display_list_left = []
+    display_list_right = []
+    has_filter_words = len(display_filter_words) > 0
+    has_ignore_words = len(display_ignore_words) > 0
+    # 对展示的内容根据黑名单和白名单配置做过滤
+    for line in json_left_list:
+        if has_ignore_words:
+            # 有限制黑名单, 需要循环处理: 如果含有黑名单则跳过
+            is_ignore = False
+            for ignore_word in display_ignore_words:
+                if ignore_word and ignore_word in line:
+                    is_ignore = True
+                    break
+            if is_ignore:
+                continue
+        if has_filter_words:
+            # 有限制白名单, 需要循环处理:如果不在白名单内则跳过
+            is_filter = False
+            has_filter = False  # 记录是否有非空字符串的过滤词
+            for filter_word in display_filter_words:
+                if filter_word:
+                    has_filter = True
+                    if filter_word in line:
+                        is_filter = True
+                        break
+            if has_filter and not is_filter:
+                continue
+        # 添加到待显示的list
+        display_list_left.append(line)
+
+    for line in json_right_list:
+        if has_ignore_words:
+            # 有限制黑名单, 需要循环处理: 如果含有黑名单则跳过
+            is_ignore = False
+            for ignore_word in display_ignore_words:
+                if ignore_word and ignore_word in line:
+                    is_ignore = True
+                    break
+            if is_ignore:
+                continue
+        if has_filter_words:
+            # 有限制白名单, 需要循环处理:如果不在白名单内则跳过
+            is_filter = False
+            has_filter = False  # 记录是否有非空字符串的过滤词
+            for filter_word in display_filter_words:
+                if filter_word:
+                    has_filter = True
+                    if filter_word in line:
+                        is_filter = True
+                        break
+            if has_filter and not is_filter:
+                continue
+        # 添加到待显示的list
+        display_list_right.append(line)
+
+    res_tmp = HtmlDiff().make_file(display_list_left,
+                                   display_list_right,
                                    fromdesc='<a href="' + left_url + '" target="_blank">' + left_url + '</a>',
                                    todesc='<a href="' + right_url + '" target="_blank">' + right_url + '</a>',
                                    context=False)
