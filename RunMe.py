@@ -44,8 +44,9 @@ class JsonDiffTool:
         self.hostname_1 = self.conf.get('QueryDiff', 'HOSTNAME_1')
         self.hostname_2 = self.conf.get('QueryDiff', 'HOSTNAME_2')
         self.sleep_time = self.conf.getfloat('QueryDiff', 'SLEEP_TIME')
-        self.url_ignore_words = self.conf.get('QueryDiff', 'URL_IGNORE_WORDS').replace(' ', '').split(';')
         self.url_filter_words = self.conf.get('QueryDiff', 'URL_FILTER_WORDS').replace(' ', '').split(';')
+        self.url_ignore_words = self.conf.get('QueryDiff', 'URL_IGNORE_WORDS').replace(' ', '').split(';')
+        self.is_from_log = (self.conf.get('QueryDiff', 'IS_FROM_LOG').lower() == "true")
         self.request_file = self.data_path + self.conf.get('QueryDiff', 'REQUEST_FILE')
         self.same_result_urls = self.data_path + self.conf.get('QueryDiff', 'SAME_RESULT_URLS')
         self.retry_urls = self.data_path + self.conf.get('QueryDiff', 'RETRY_URLS')
@@ -125,6 +126,16 @@ class JsonDiffTool:
                         self.__log_print("SKIPPED")
                         skipped_urls_obj.write(line + "\n")
                         continue
+
+                    # 对于日志格式的记录, 先提取出url; 匹配的规则为: {前缀}GET {url} {后缀}
+                    if self.is_from_log:
+                        start_index = line.find('GET ')
+                        if start_index >= 0:
+                            start_index += len('GET ')
+                            end_index = line.find(' ', start_index)
+                            if end_index < 0:
+                                end_index = len(line)
+                            line = line[start_index:end_index]
 
                     # 过滤url的白名单关键字
                     if len(self.url_filter_words) > 0:
