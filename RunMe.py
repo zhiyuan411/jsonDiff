@@ -71,7 +71,7 @@ class JsonDiffTool:
         self.begin_time = datetime.datetime.now()  # 记录每条记录执行的起始时间
         ###########################################
 
-    def __get_json(self, url):
+    def _get_json(self, url):
 
         request = urllib2.Request(url)
         response = urllib2.urlopen(request)
@@ -79,10 +79,30 @@ class JsonDiffTool:
 
         return page
 
-    def __log_print(self, status):
+    def _log_print(self, status):
         print self.total_line_num, ":", self.status[status][
             "printStr"], "(", datetime.datetime.now() - self.begin_time, ")"
         self.status[status]["count"] += 1
+
+    def _print_sum(self):
+        # 展示汇总结果
+        valid_count = self.total_line_num - self.status["SKIPPED"]["count"]
+        print "总共执行", self.total_line_num, "条记录, 其中, 跳过", self.status["SKIPPED"]["count"], "条记录,"
+        print "遇到异常的有", self.status["EXCEPTION"]["count"], "条记录, 占未跳过记录的", self.status["EXCEPTION"][
+                                                                               "count"] * 100.0 / valid_count, "%"
+        print "结果有差异的有", self.status["DIFF"]["count"], "条记录, 占未跳过记录的", self.status["DIFF"][
+                                                                           "count"] * 100.0 / valid_count, "%"
+
+    def _merge_sum_html(self):
+        # 合并html结果文件
+        html_sum_file_obj = open(self.html_sum_file, 'w')
+        for sonfile in os.listdir(self.data_path):
+            if sonfile.endswith("_diffResult.html"):
+                sonfile_obj = open(self.data_path + sonfile, 'r')
+                html_sum_file_obj.write(sonfile_obj.read())
+                html_sum_file_obj.write("\n\n")
+                sonfile_obj.close()
+        html_sum_file_obj.close()
 
     def query_diff(self):
         request_file_obj = open(self.request_file, 'r')
@@ -123,7 +143,7 @@ class JsonDiffTool:
                     # 跳过空行
                     line = line.strip()
                     if not line:
-                        self.__log_print("SKIPPED")
+                        self._log_print("SKIPPED")
                         skipped_urls_obj.write(line + "\n")
                         continue
 
@@ -145,7 +165,7 @@ class JsonDiffTool:
                                 has_filter_flag = True
                                 break
                         if not has_filter_flag:
-                            self.__log_print("SKIPPED")
+                            self._log_print("SKIPPED")
                             skipped_urls_obj.write(line + "\n")
                             continue
 
@@ -156,7 +176,7 @@ class JsonDiffTool:
                             has_ignore_flag = True
                             break
                     if has_ignore_flag:
-                        self.__log_print("SKIPPED")
+                        self._log_print("SKIPPED")
                         skipped_urls_obj.write(line + "\n")
                         continue
 
@@ -164,12 +184,12 @@ class JsonDiffTool:
                     right_url = self.hostname_2 + line
 
                     try:
-                        left_json = self.__get_json(left_url)
-                        right_json = self.__get_json(right_url)
+                        left_json = self._get_json(left_url)
+                        right_json = self._get_json(right_url)
 
                     except Exception, e:
                         # http请求失败,继续下一条请求
-                        self.__log_print("EXCEPTION")
+                        self._log_print("EXCEPTION")
                         exception_urls_obj.write(line + "\n")
                         exception_results_file_obj.write("=" + str(self.total_line_num) + "=\n")
                         exception_results_file_obj.writelines(e.message + "\n")
@@ -181,7 +201,7 @@ class JsonDiffTool:
                                                   self.value_ignore, self.is_disorder_array, self.is_full_compare,
                                                   self.analyze_reference)
                     except Exception, e:
-                        self.__log_print("EXCEPTION")
+                        self._log_print("EXCEPTION")
                         exception_urls_obj.write(line + "\n")
                         exception_results_file_obj.write("=" + str(self.total_line_num) + "=\n")
                         exception_results_file_obj.writelines(e.message + "\n")
@@ -190,7 +210,7 @@ class JsonDiffTool:
 
                     if diff_result:
                         # 获取html格式的差异结果
-                        self.__log_print("DIFF")
+                        self._log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, left_url, right_url,
                                                          self.display_filter_words, self.display_ignore_words)
                         out_file = '%s%s%s%s%s' % (
@@ -205,7 +225,7 @@ class JsonDiffTool:
                         diff_results_file_obj.write(json.dumps(diff_result, indent=4) + "\n")
 
                     else:
-                        self.__log_print("SAME")
+                        self._log_print("SAME")
                         same_result_urls_obj.write(line + "\n")
 
                     # 限速
@@ -220,23 +240,9 @@ class JsonDiffTool:
             exception_urls_obj.close()
             skipped_urls_obj.close()
 
-        # 展示汇总结果
-        valid_count = self.total_line_num - self.status["SKIPPED"]["count"]
-        print "总共执行", self.total_line_num, "条记录, 其中, 跳过", self.status["SKIPPED"]["count"], "条记录,"
-        print "遇到异常的有", self.status["EXCEPTION"]["count"], "条记录, 占未跳过记录的", self.status["EXCEPTION"][
-                                                                               "count"] * 100.0 / valid_count, "%"
-        print "结果有差异的有", self.status["DIFF"]["count"], "条记录, 占未跳过记录的", self.status["DIFF"][
-                                                                           "count"] * 100.0 / valid_count, "%"
+        self._print_sum()
 
-        # 合并html结果文件
-        html_sum_file_obj = open(self.html_sum_file, 'w')
-        for sonfile in os.listdir(self.data_path):
-            if sonfile.endswith("_diffResult.html"):
-                sonfile_obj = open(self.data_path + sonfile, 'r')
-                html_sum_file_obj.write(sonfile_obj.read())
-                html_sum_file_obj.write("\n\n")
-                sonfile_obj.close()
-        html_sum_file_obj.close()
+        self._merge_sum_html()
 
     def json_data_diff(self):
         json_data_file_1_obj = open(self.json_data_file_1, 'r')
@@ -286,7 +292,7 @@ class JsonDiffTool:
                     left_json = left_json.strip()
                     right_json = right_json.strip()
                     if not left_json or not right_json:
-                        self.__log_print("SKIPPED")
+                        self._log_print("SKIPPED")
                         continue
 
                     try:
@@ -294,7 +300,7 @@ class JsonDiffTool:
                                                   self.value_ignore, self.is_disorder_array, self.is_full_compare,
                                                   self.analyze_reference)
                     except Exception, e:
-                        self.__log_print("EXCEPTION")
+                        self._log_print("EXCEPTION")
                         exception_json_data_1_obj.write("=" + str(self.total_line_num) + "=\n")
                         exception_json_data_1_obj.write(left_json + "\n")
                         exception_json_data_2_obj.write("=" + str(self.total_line_num) + "=\n")
@@ -310,7 +316,7 @@ class JsonDiffTool:
                         json_data_name_1 = self.json_data_file_1[json_data_index + 1:]
                         json_data_index = self.json_data_file_2.rfind(os.path.sep)
                         json_data_name_2 = self.json_data_file_2[json_data_index + 1:]
-                        self.__log_print("DIFF")
+                        self._log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, json_data_name_1,
                                                          json_data_name_2, self.display_filter_words,
                                                          self.display_ignore_words)
@@ -327,7 +333,7 @@ class JsonDiffTool:
                         diff_results_file_obj.write(json.dumps(diff_result, indent=4) + "\n")
 
                     else:
-                        self.__log_print("SAME")
+                        self._log_print("SAME")
 
                     # 限速
                     if self.sleep_time != 0:
@@ -342,23 +348,9 @@ class JsonDiffTool:
             exception_json_data_1_obj.close()
             exception_json_data_2_obj.close()
 
-        # 展示汇总结果
-        valid_count = self.total_line_num - self.status["SKIPPED"]["count"]
-        print "总共执行", self.total_line_num, "条记录, 其中, 跳过", self.status["SKIPPED"]["count"], "条记录,"
-        print "遇到异常的有", self.status["EXCEPTION"]["count"], "条记录, 占未跳过记录的", self.status["EXCEPTION"][
-                                                                               "count"] * 100.0 / valid_count, "%"
-        print "结果有差异的有", self.status["DIFF"]["count"], "条记录, 占未跳过记录的", self.status["DIFF"][
-                                                                           "count"] * 100.0 / valid_count, "%"
+        self._print_sum()
 
-        # 合并html结果文件
-        html_sum_file_obj = open(self.html_sum_file, 'w')
-        for sonfile in os.listdir(self.data_path):
-            if sonfile.endswith("_diffResult.html"):
-                sonfile_obj = open(self.data_path + sonfile, 'r')
-                html_sum_file_obj.write(sonfile_obj.read())
-                html_sum_file_obj.write("\n\n")
-                sonfile_obj.close()
-        html_sum_file_obj.close()
+        self._merge_sum_html()
 
 
 # 运行的入口

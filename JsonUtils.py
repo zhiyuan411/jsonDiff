@@ -220,11 +220,14 @@ def json_assert(expect_json, actual_json, absolute_ignore, relactive_ignore, val
 
     # 区分数组比较方式,2种方法进行比较
     if is_disorder_array:
+        # 空间换时间,记录相等的结果用于全量比较时提效; 之所以记录结果而不是key, 是因为无序比较时不关心key是否相同
+        equal_values = []
         # 无序比较数组,验证期望数据在实际中是否存在
         for exp_key in result_exp:
             # 直接验证存在的值是否相等,提高数组有序时的比较效率
             if exp_key in result_act:
                 if result_exp[exp_key] == result_act[exp_key]:
+                    equal_values.append(result_exp[exp_key])
                     continue
             # 进行数组的无序比较
             if not __disorder_array_assert(None, exp_key, result_exp[exp_key], result_act):
@@ -233,6 +236,17 @@ def json_assert(expect_json, actual_json, absolute_ignore, relactive_ignore, val
                     result[exp_key] = __merge_values(result_exp[exp_key], result_act[exp_key])
                 else:
                     result[exp_key] = __merge_values(result_exp[exp_key], NOT_EXIST_FLAG)
+            else:
+                # 无序比较存在相同结果, 故记录
+                equal_values.append(result_exp[exp_key])
+
+        # 上面的比较是判断了期望包含的在实际结果的情况,相等判断则需要: 是否实际结果中的有不在记录的相同结果集合中的值
+        # 注意: 不能单纯去验证是否有key只在实际结果中存在, 反例:[111,111,222]和[111,222,333]
+        if is_full_compare:
+            for act_key in result_act:
+                # 验证是否有实际结果的value在记录的相同结果集合中不存在
+                if result_act[act_key] not in equal_values:
+                    result[act_key] = __merge_values(NOT_EXIST_FLAG, result_act[act_key])
     else:
         # 有序比较数组,验证期望数据在实际中是否存在
         for exp_key in result_exp:
@@ -241,13 +255,12 @@ def json_assert(expect_json, actual_json, absolute_ignore, relactive_ignore, val
             elif result_exp[exp_key] != result_act[exp_key]:
                 result[exp_key] = __merge_values(result_exp[exp_key], result_act[exp_key])
 
-    # 上面的比较是判断了期望包含的在实际结果的情况,相等判断则需要再添加不再期望中却在实际结果中的情况
-    if is_full_compare:
-        # 验证是否有实际数据在期望中不存在
-        # fixme: 此处不支持数组无序比较
-        for act_key in result_act:
-            if act_key not in result_exp:
-                result[act_key] = __merge_values(NOT_EXIST_FLAG, result_act[act_key])
+        # 上面的比较是判断了期望包含的在实际结果的情况,相等判断则需要再添加有key只存在在实际结果中的情况
+        if is_full_compare:
+            # 验证是否有实际数据的key在期望中不存在
+            for act_key in result_act:
+                if act_key not in result_exp:
+                    result[act_key] = __merge_values(NOT_EXIST_FLAG, result_act[act_key])
 
     return result
 
@@ -403,15 +416,46 @@ def generate_html(json_left, json_right, left_url, right_url, display_filter_wor
     result = ''
     page_to_list = page_to_process.encode('utf-8').splitlines()
     for line in page_to_list:
-        if line.find('difflib_chg_to0__0') > 0:
-            result = result + '\n' + line
-        elif line.find('<a href=') > 0:
-            result = result + '\n' + line.replace('<tr>', '<tr class="diff_next">')
-        elif line.find('<span class="diff_sub">') > 0:
-            result = result + '\n' + line.replace('<tr>', '<tr class="diff_sub">')
-        elif line.find('<span class="diff_add">') > 0:
-            result = result + '\n' + line.replace('<tr>', '<tr class="diff_add">')
-        else:
-            result = result + '\n' + line
+
+        # 原样式是对字符进行渲染不同颜色的背景, 分3种:
+        # 新增: <span class="diff_add">
+        # 缺失: <span class="diff_sub">
+        # 差异: <span class="diff_chg">
+        # 如果一侧整行缺失或者新增, 另一侧会保持空白
+        #
+        # 新样式: 当一侧为空时,则使用另一侧样式; 其他新增/缺失/差异情况均添加蓝色背景:
+        if '<head>' in line:
+            # 添加用于其他新增/缺失/差异情况的新样式
+            line = line + '\n' + '    <style type="text/css">.diff_background {background-color:#AFD1FF}</style>'
+        if '<span class="diff_' in line:
+            if '<td class="diff_header"></td>' not in line:
+                # 将2侧全行的背景替换为指定样式
+                line = line.replace('<tr>', '<tr class="diff_background">')
+            else:
+                # 1侧为空行, 将另一侧也替换为相同颜色ß
+                if '<span class="diff_sub">' in line:
+                    line = line.replace('<tr>', '<tr class="diff_sub">')
+                elif '<span class="diff_add">' in line:
+                    line = line.replace('<tr>', '<tr class="diff_add">')
+
+        # 将连接换为全称
+        # if 't</a>' in line:
+        #     line = line.replace('t</a>', 'top</a>')
+        # if 'n</a>' in line:
+        #     line = line.replace('n</a>', 'next</a>')
+        # if 'f</a>' in line:
+        #     line = line.replace('f</a>', 'first</a>')
+
+        # 设置展示宽度
+        if '<table' in line and '__top' in line:
+            line = line.replace('<table', '<table width="90%" align="center"')
+        if '.diff_next' in line:
+            line = line.replace('}', ';width:5px}')
+        if ' .diff_header' in line:
+            line = line.replace('}', ';width:50%;word-break:break-all}')
+        if 'td.diff_header' in line:
+            line = line.replace('}', ';width:0.01%;white-space:nowrap}')
+
+        result = result + '\n' + line
 
     return result
