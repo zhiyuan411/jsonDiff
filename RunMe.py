@@ -38,6 +38,7 @@ class JsonDiffTool:
         self.analyze_reference = (self.conf.get('Global', 'ANALYZE_REFERENCE').lower() == "true")
         self.display_filter_words = self.conf.get('Global', 'DISPLAY_FILTER_WORDS').replace(' ', '').split(';')
         self.display_ignore_words = self.conf.get('Global', 'DISPLAY_IGNORE_WORDS').replace(' ', '').split(';')
+        self.display_width = self.conf.getint('Global', 'DISPLAY_WIDTH')
         self.diff_results_file = self.data_path + self.conf.get('Global', 'DIFF_RESULTS_FILE')
         self.exception_results_file = self.data_path + self.conf.get('Global', 'EXCEPTION_RESULTS_FILE')
 
@@ -204,7 +205,7 @@ class JsonDiffTool:
                         self._log_print("EXCEPTION")
                         exception_urls_obj.write(line + "\n")
                         exception_results_file_obj.write("=" + str(self.total_line_num) + "=\n")
-                        exception_results_file_obj.writelines(e.message + "\n")
+                        exception_results_file_obj.writelines(str(e) + "\n")
                         exception_results_file_obj.writelines(traceback.format_exc())
                         continue
 
@@ -212,7 +213,7 @@ class JsonDiffTool:
                         # 获取html格式的差异结果
                         self._log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, left_url, right_url,
-                                                         self.display_filter_words, self.display_ignore_words)
+                                                         self.display_filter_words, self.display_ignore_words, self.display_width)
                         out_file = '%s%s%s%s%s' % (
                             self.data_path, 'lineNum_', str(self.total_line_num), '_diffResult', '.html')
                         out_file_obj = open(out_file, 'w')
@@ -319,7 +320,7 @@ class JsonDiffTool:
                         self._log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, json_data_name_1,
                                                          json_data_name_2, self.display_filter_words,
-                                                         self.display_ignore_words)
+                                                         self.display_ignore_words, self.display_width)
                         out_file = '%s%s%s%s%s' % (
                             self.data_path, 'lineNum_', str(self.total_line_num), '_diffResult', '.html')
                         out_file_obj = open(out_file, 'w')

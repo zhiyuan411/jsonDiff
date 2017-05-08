@@ -328,7 +328,7 @@ def __disorder_array_assert(key_prefix, exp_key, exp_value, result_act):
             i += 1
 
 
-def generate_html(json_left, json_right, left_url, right_url, display_filter_words, display_ignore_words):
+def generate_html(json_left, json_right, left_url, right_url, display_filter_words, display_ignore_words, display_width):
     # 对JSONP做兼容
     json_left = json_left.strip()
     json_right = json_right.strip()
@@ -376,8 +376,16 @@ def generate_html(json_left, json_right, left_url, right_url, display_filter_wor
                         break
             if has_filter and not is_filter:
                 continue
-        # 添加到待显示的list
-        display_list_left.append(line)
+        if display_width > 0:
+            # 处理最大显示宽度，超过了需要折行显示
+            i = 0
+            line_len = len(line)
+            while i < line_len:
+                display_list_left.append(line[i:i+display_width])
+                i = i + display_width
+        else:
+            # 直接添加到待显示的list
+            display_list_left.append(line)
 
     for line in json_right_list:
         if has_ignore_words:
@@ -401,8 +409,16 @@ def generate_html(json_left, json_right, left_url, right_url, display_filter_wor
                         break
             if has_filter and not is_filter:
                 continue
-        # 添加到待显示的list
-        display_list_right.append(line)
+        if display_width > 0:
+            # 处理最大显示宽度，超过了需要折行显示
+            i = 0
+            line_len = len(line)
+            while i < line_len:
+                display_list_right.append(line[i:i+display_width])
+                i = i + display_width
+        else:
+            # 添加到待显示的list
+            display_list_right.append(line)
 
     res_tmp = HtmlDiff().make_file(display_list_left,
                                    display_list_right,
