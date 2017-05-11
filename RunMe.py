@@ -102,9 +102,10 @@ class JsonDiffTool:
         for sonfile in os.listdir(self.data_path):
             if sonfile.endswith("_diffResult.html"):
                 sonfile_obj = open(self.data_path + sonfile, 'r')
-                html_sum_file_obj.write(sonfile_obj.read())
+                sonfile_content = sonfile_obj.read()
+                html_sum_file_obj.write(sonfile_content)
                 html_sum_file_obj.write("\n\n")
-                html_sum_file_obj_bak.write(sonfile_obj.read())
+                html_sum_file_obj_bak.write(sonfile_content)
                 html_sum_file_obj_bak.write("\n\n")
                 sonfile_obj.close()
         html_sum_file_obj.close()
