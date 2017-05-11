@@ -8,6 +8,7 @@ import os
 import time
 import traceback
 import urllib2
+from sys import argv
 
 import datetime
 
@@ -111,9 +112,10 @@ class JsonDiffTool:
         html_sum_file_obj.close()
         html_sum_file_obj_bak.close()
 
-    def query_diff(self):
+    def query_diff(self, is_retry):
 
-        request_file_obj = open(self.request_file, 'r')
+        # 如果外部参数指定了retry, 则强制使用retry文件作为输入文件
+        request_file_obj = open(self.retry_urls if is_retry else self.request_file, 'r')
         diff_results_file_obj = open(self.diff_results_file, 'w')
         exception_results_file_obj = open(self.exception_results_file, 'w')
         same_result_urls_obj = open(self.same_result_urls, 'w')
@@ -261,10 +263,11 @@ class JsonDiffTool:
         retry_urls_obj.close()
         real_retry_urls.close()
 
-    def json_data_diff(self):
+    def json_data_diff(self, is_retry):
 
-        json_data_file_1_obj = open(self.json_data_file_1, 'r')
-        json_data_file_2_obj = open(self.json_data_file_2, 'r')
+        # 如果外部参数指定了retry, 则强制使用retry文件作为输入文件
+        json_data_file_1_obj = open(self.retry_json_data_1 if is_retry else self.json_data_file_1, 'r')
+        json_data_file_2_obj = open(self.retry_json_data_2 if is_retry else self.json_data_file_2, 'r')
         diff_results_file_obj = open(self.diff_results_file, 'w')
         exception_results_file_obj = open(self.exception_results_file, 'w')
         # retry文件可能被用作输入文件, 所以需要先写入到临时文件, 结束后再覆盖
@@ -387,10 +390,17 @@ class JsonDiffTool:
 
 # 运行的入口
 if __name__ == '__main__':
+
+    is_retry = False
+    for param in argv:
+        if param == "--retry":
+            is_retry = True
+
     jd = JsonDiffTool()
+
     if jd.mode.lower() == "query":
-        jd.query_diff()
+        jd.query_diff(is_retry)
     elif jd.mode.lower() == "jsondata":
-        jd.json_data_diff()
+        jd.json_data_diff(is_retry)
     else:
         print "mode is unknown."
