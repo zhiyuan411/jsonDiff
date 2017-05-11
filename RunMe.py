@@ -96,21 +96,28 @@ class JsonDiffTool:
 
     def _merge_sum_html(self):
         # 合并html结果文件
+        now = datetime.datetime.now()
         html_sum_file_obj = open(self.html_sum_file, 'w')
+        html_sum_file_obj_bak = open(self.html_sum_file + '.' + now.strftime("%Y%m%d%H%M%S"), 'w')
         for sonfile in os.listdir(self.data_path):
             if sonfile.endswith("_diffResult.html"):
                 sonfile_obj = open(self.data_path + sonfile, 'r')
                 html_sum_file_obj.write(sonfile_obj.read())
                 html_sum_file_obj.write("\n\n")
+                html_sum_file_obj_bak.writable(sonfile_obj.read())
+                html_sum_file_obj_bak.writable("\n\n")
                 sonfile_obj.close()
         html_sum_file_obj.close()
+        html_sum_file_obj_bak.close()
 
     def query_diff(self):
+
         request_file_obj = open(self.request_file, 'r')
         diff_results_file_obj = open(self.diff_results_file, 'w')
         exception_results_file_obj = open(self.exception_results_file, 'w')
         same_result_urls_obj = open(self.same_result_urls, 'w')
-        retry_urls_obj = open(self.retry_urls, 'w')
+        # retry文件可能被用作输入文件, 所以需要先写入到临时文件, 结束后再覆盖
+        retry_urls_obj = open(self.retry_urls + '.tmp', 'w')
         exception_urls_obj = open(self.exception_urls, 'w')
         skipped_urls_obj = open(self.skipped_urls, 'w')
 
@@ -213,7 +220,8 @@ class JsonDiffTool:
                         # 获取html格式的差异结果
                         self._log_print("DIFF")
                         html_diff_result = generate_html(left_json, right_json, left_url, right_url,
-                                                         self.display_filter_words, self.display_ignore_words, self.display_width)
+                                                         self.display_filter_words, self.display_ignore_words,
+                                                         self.display_width)
                         out_file = '%s%s%s%s%s' % (
                             self.data_path, 'lineNum_', str(self.total_line_num), '_diffResult', '.html')
                         out_file_obj = open(out_file, 'w')
@@ -245,13 +253,22 @@ class JsonDiffTool:
 
         self._merge_sum_html()
 
+        # 生成可以复用的retry文件
+        real_retry_urls = open(self.retry_urls, 'w')
+        retry_urls_obj = open(self.retry_urls + '.tmp', 'r')
+        real_retry_urls.write(retry_urls_obj.read())
+        retry_urls_obj.close()
+        real_retry_urls.close()
+
     def json_data_diff(self):
+
         json_data_file_1_obj = open(self.json_data_file_1, 'r')
         json_data_file_2_obj = open(self.json_data_file_2, 'r')
         diff_results_file_obj = open(self.diff_results_file, 'w')
         exception_results_file_obj = open(self.exception_results_file, 'w')
-        retry_json_data_1_obj = open(self.retry_json_data_1, 'w')
-        retry_json_data_2_obj = open(self.retry_json_data_2, 'w')
+        # retry文件可能被用作输入文件, 所以需要先写入到临时文件, 结束后再覆盖
+        retry_json_data_1_obj = open(self.retry_json_data_1 + '.tmp', 'w')
+        retry_json_data_2_obj = open(self.retry_json_data_2 + '.tmp', 'w')
         exception_json_data_1_obj = open(self.exception_json_data_1, 'w')
         exception_json_data_2_obj = open(self.exception_json_data_2, 'w')
 
@@ -352,6 +369,19 @@ class JsonDiffTool:
         self._print_sum()
 
         self._merge_sum_html()
+
+        # 生成可以复用的retry文件
+        real_retry_json_data_1 = open(self.retry_json_data_1, 'w')
+        retry_json_data_1_obj = open(self.retry_json_data_1 + '.tmp', 'r')
+        real_retry_json_data_1.write(retry_json_data_1_obj.read())
+        retry_json_data_1_obj.close()
+        real_retry_json_data_1.close()
+
+        real_retry_json_data_2 = open(self.retry_json_data_2, 'w')
+        retry_json_data_2_obj = open(self.retry_json_data_2 + '.tmp', 'r')
+        real_retry_json_data_2.write(retry_json_data_2_obj.read())
+        retry_json_data_2_obj.close()
+        real_retry_json_data_2.close()
 
 
 # 运行的入口
